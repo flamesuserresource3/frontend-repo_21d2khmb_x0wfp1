@@ -1,10 +1,62 @@
+import { useRef, useState } from 'react';
 import Spline from '@splinetool/react-spline';
 
 export default function Hero() {
+  const pressedRef = useRef(new Map());
+  const [, force] = useState(0);
+
+  const keyFor = (obj) => obj?.uuid || obj?.id || obj?.name || Math.random().toString(36);
+
+  const handleMouseDown = (e) => {
+    const obj = e?.target;
+    if (!obj) return;
+    const k = keyFor(obj);
+    if (!pressedRef.current.has(k)) {
+      pressedRef.current.set(k, {
+        sx: obj.scale?.x ?? 1,
+        sy: obj.scale?.y ?? 1,
+        sz: obj.scale?.z ?? 1,
+        py: obj.position?.y ?? 0,
+      });
+    }
+    // Apply a subtle press effect: shrink + slight downward nudge
+    const s = 0.9;
+    if (obj.scale) {
+      obj.scale.x *= s;
+      obj.scale.y *= s;
+      obj.scale.z *= s;
+    }
+    if (obj.position) obj.position.y -= 0.5;
+    // re-render overlay labels if any
+    force((n) => n + 1);
+  };
+
+  const handleMouseUp = (e) => {
+    const obj = e?.target;
+    if (!obj) return;
+    const k = keyFor(obj);
+    const orig = pressedRef.current.get(k);
+    if (orig) {
+      if (obj.scale) {
+        obj.scale.x = orig.sx;
+        obj.scale.y = orig.sy;
+        obj.scale.z = orig.sz;
+      }
+      if (obj.position) obj.position.y = orig.py;
+      pressedRef.current.delete(k);
+      force((n) => n + 1);
+    }
+  };
+
   return (
     <section className="relative h-screen w-full overflow-hidden bg-black text-white">
       <div className="absolute inset-0">
-        <Spline scene="https://prod.spline.design/VJLoxp84lCdVfdZu/scene.splinecode" style={{ width: '100%', height: '100%' }} />
+        <Spline
+          scene="https://prod.spline.design/fcD-iW8YZHyBp1qq/scene.splinecode"
+          style={{ width: '100%', height: '100%' }}
+          onMouseDown={handleMouseDown}
+          onMouseUp={handleMouseUp}
+        />
       </div>
 
       {/* Soft gradient glows - don't block interaction */}
@@ -22,7 +74,7 @@ export default function Hero() {
           Designing playful, modern experiences
         </h1>
         <p className="mt-4 max-w-2xl text-white/80 md:text-lg">
-          I blend systems thinking with delightful micro-interactions to craft products people love.
+          Tap the keyboard — keys "press" down when you click them.
         </p>
         <div className="mt-10 flex items-center gap-4">
           <a href="#projects" className="group rounded-xl bg-white px-5 py-3 font-medium text-black shadow-[0_0_0_1px_rgba(255,255,255,0.2)_inset,0_12px_40px_-12px_rgba(255,255,255,0.5)] transition transform-gpu hover:-translate-y-0.5">
